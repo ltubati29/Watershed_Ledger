@@ -27,3 +27,7 @@ Optional: a free USGS API key raises request limits. `export USGS_API_KEY=your_k
 - USGS values are provisional. These sensors report temperature, conductivity, oxygen and pH, not bacteria, blooms or flow speed. The dashboard shows those as "not measured" and prompts a person to check.
 - Scoring thresholds are starting points from public guidance, not yet validated against past events.
 - Add stations by USGS number in the box on the page; check that a station reports oxygen and pH first.
+
+## Public page (GitHub Pages)
+
+`update_live.py` runs on GitHub every 30 minutes (`.github/workflows/update-data.yml`), reads the station numbers in `stations.txt`, and writes `live/readings.csv` and `live/history.json`. The same `index.html` loads those files when no local server is running, so the public page updates itself. To change the stations, edit `stations.txt` on GitHub.

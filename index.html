@@ -134,14 +134,15 @@ select{font:inherit;padding:8px;border:1px solid var(--line);border-radius:6px;b
 <svg class="waves" viewBox="0 0 2880 120" preserveAspectRatio="none" aria-hidden="true"><path d="M0 60 C240 20 480 100 720 60 S1200 20 1440 60 C1680 20 1920 100 2160 60 S2640 20 2880 60 V120 H0Z"/></svg>
 </header>
 
-<section class="panel" id="live" style="margin-top:22px"><div class="dh"><div><h2>Live USGS data</h2><p id="lvs" class="note" style="margin:6px 0 0;max-width:62ch">Checking for the local server…</p></div><button id="lvb" type="button" disabled>Refresh from USGS</button></div>
-<div class="pfg"><label>USGS station numbers (comma separated)<input id="lvi" value="01638500, 01646500"></label><label class="opt" style="align-self:end"><input type="checkbox" id="lva">Auto-refresh every 15 minutes</label></div></section>
-<section class="panel" style="margin-top:22px" aria-live="polite"><h2>One Health summary (real stations only)</h2><p id="sum" style="margin:8px 0 0;max-width:75ch"></p></section>
-
+<section class="panel" id="live" style="margin-top:22px"><div class="dh"><div><h2>Live USGS data</h2><p class="note" style="margin:4px 0 0;max-width:62ch">USGS sensors send real readings automatically. Enter their station numbers below, or use Find stations to search an area.</p><p id="lvs" class="note" style="margin:6px 0 0;max-width:62ch">Checking for the local server…</p></div><button id="lvb" type="button" disabled>Refresh from USGS</button></div>
+<div class="pfg"><label>USGS station numbers (comma separated)<input id="lvi" value="01638500, 01646500"></label><label class="opt" style="align-self:end"><input type="checkbox" id="lva">Auto-refresh every 15 minutes</label></div>
+<div class="pfg"><label>Find stations: search area (west, south, east, north)<input id="fbb" value="-106.65, 25.84, -93.51, 36.50"></label><button id="fnd" type="button" class="ghost" style="align-self:end" disabled>Find stations with oxygen and pH</button></div>
+<div id="fres"></div></section>
 <div class="grid">
 <section class="panel mappanel" aria-label="River map">
+<label class="note" style="display:block;margin-bottom:8px">Station <select id="stsel" style="max-width:100%"></select></label>
 <svg id="map" class="mapsvg" viewBox="0 0 340 520" width="100%" role="group" aria-label="Map of river stations joined in downstream order"></svg>
-<p class="note" style="margin:6px 0 0">Stations are joined in downstream order. The line is schematic, not the river's exact course. Oval is still water, round dot is flowing water, ring color is overall status, and gray means no reading yet.</p>
+<p class="note" style="margin:6px 0 0">The map shows stations within 500 km of the selected one, joined in downstream order. The line is schematic, not the river's exact course. Oval is still water, round dot is flowing water, ring color is overall status, and gray means no reading yet.</p>
 </section>
 <section class="panel" aria-live="polite">
 <div class="dh"><div><h2 id="sname"></h2>
@@ -184,11 +185,14 @@ select{font:inherit;padding:8px;border:1px solid var(--line);border-radius:6px;b
 </section>
 
 <section class="panel" style="margin-top:22px">
-<h2>Import readings (sensor feeds and files)</h2>
-<p style="max-width:75ch;margin:8px 0">Paste CSV with a header row: <code>name,lat,lon,flow,ecoli,cyano,do,temp,ph,turb,cond</code>. Names match existing sites or add new ones (up to 12). Comma, tab or semicolon separated all work. A blank cell means not measured: an existing site keeps its value, and a new site leaves it out of the score. The companion script <code>fetch_usgs_to_ledger.py</code> turns USGS sensor values into this format.</p>
+<details><summary style="cursor:pointer;font-family:Fraunces,Georgia,serif;font-weight:700;font-size:1.3rem">Advanced: import readings from a lab or a file</summary>
+<p style="max-width:75ch;margin:8px 0">For lab results or data from another agency. USGS stations don't need this: use the box above. Paste CSV with a header row: <code>name,lat,lon,flow,ecoli,cyano,do,temp,ph,turb,cond</code>. Names match existing sites or add new ones (up to 12). Comma, tab or semicolon separated all work. A blank cell means not measured: an existing site keeps its value, and a new site leaves it out of the score. The companion script <code>fetch_usgs_to_ledger.py</code> turns USGS sensor values into this format.</p>
 <textarea id="it" aria-label="CSV to import" placeholder="name,lat,lon,temp,do,ph,cond&#10;Cedar Park headwater riffle,30.301,-97.746,15.8,8.9,7.5,305"></textarea>
 <div class="row"><button id="imp" type="button">Import</button></div><div id="t2" class="t" role="status"></div>
-<h3>Or add your own station</h3>
+</details></section>
+<section class="panel" style="margin-top:22px">
+<h2>Add a place with no USGS sensor</h2>
+<p class="note" style="max-width:62ch;margin:6px 0 0">Most ponds and small creeks have no USGS sensor. Add yours here, then record what you see with the quick buttons in Log a reading.</p>
 <div class="pfg"><label>Name<input id="an" maxlength="60"></label><label>Latitude<input id="aa" type="number" step="any"></label><label>Longitude<input id="ao" type="number" step="any"></label><label>Water type<select id="ak"><option value="0">Still (pond, lake)</option><option value="0.5">Flowing (creek, river)</option></select></label></div>
 <div class="row"><button id="aadd" type="button">Add station</button></div><div id="t4" class="t" role="status"></div>
 </section>
@@ -201,23 +205,8 @@ select{font:inherit;padding:8px;border:1px solid var(--line);border-radius:6px;b
 </section>
 
 <section class="panel" style="margin-top:22px">
-<h2>Test it with real people</h2>
-<p style="max-width:75ch;margin:8px 0 0">Ask three volunteers to try these while you watch, then record each session right after. Only enter sessions that really happened. Results stay in this browser, so use one device.</p>
-<ol style="margin:8px 0 0;padding-left:20px"><li>Find the site that needs attention and say why.</li><li>Log a bacteria reading using quick bands.</li><li>Explain what "Not measured" under People means.</li></ol>
-<div class="pfg">
-<label>Volunteer (initials)<input id="pn" maxlength="20"></label>
-<fieldset><legend>Done without help</legend><label class="opt"><input type="checkbox" id="pt0">Task 1</label><label class="opt"><input type="checkbox" id="pt1">Task 2</label><label class="opt"><input type="checkbox" id="pt2">Task 3</label></fieldset>
-<label>Confidence, 1 to 5<input type="number" id="pc" min="1" max="5"></label>
-<label>What confused them?<input id="pq" maxlength="200"></label>
-</div>
-<div class="row"><button id="padd" type="button">Add session</button><button id="pclr" type="button" class="ghost">Clear sessions</button></div>
-<div id="pt" class="t" role="status"></div>
-<textarea id="pout" readonly aria-label="Pilot summary" style="margin-top:8px"></textarea>
-</section>
-
-<section class="panel" style="margin-top:22px">
 <h2>What is real, and what is not</h2>
-<p style="max-width:75ch;margin:8px 0 0"><strong>Real:</strong> the Potomac station readings, pulled from the USGS Water Data API on 1 Oct 2026 and marked provisional by USGS. <strong>Not measured:</strong> bacteria, blooms and flow speed at the Potomac station, so the app says "not measured" and does not guess.</p>
+<p style="max-width:75ch;margin:8px 0 0"><strong>Real:</strong> the station readings, pulled from the USGS Water Data API each time you press Refresh and marked provisional by USGS. <strong>Not measured:</strong> bacteria, blooms and (usually) flow speed at USGS sensor stations, so the app says "not measured" and does not guess.</p>
 <p style="max-width:75ch;margin:8px 0 0"><strong>Not yet validated:</strong> the scoring thresholds are starting points from public guidance, and the Toledo check is a consistency check, not a prediction test. A fair next test is NOAA's published western Lake Erie monitoring record: check whether the app would have flagged conditions days before August 2014. We also tested the Kaggle "Water Pollution &amp; Disease" file and set it aside: its values look simulated and it is not a live feed.</p>
 <p style="max-width:75ch;margin:8px 0 0">Live refresh runs through a small local server (server.py), which calls the USGS API for you and saves data/readings.csv. Without it, paste CSV into Import. Map tiles are not used: the map is drawn from coordinates.</p>
 </section>
@@ -227,7 +216,7 @@ select{font:inherit;padding:8px;border:1px solid var(--line);border-radius:6px;b
 var PARAMS=[["flow","Flow speed","m/s",.05],["ecoli","E. coli","CFU/100 mL",1],["cyano","Cyanobacteria","cells/mL",1000],["do","Dissolved oxygen","mg/L",.1],["temp","Temperature","°C",.1],["ph","pH","",.1],["turb","Turbidity","NTU",1],["cond","Conductivity","µS/cm",10]];
 var WHY={ecoli:"Fecal bacteria. Signals sewage or animal waste.",cyano:"Blue-green algae. Some kinds make toxins that sicken pets and people.",do:"Oxygen fish and insects breathe. Low means stress.",temp:"Warm water holds less oxygen and feeds blooms.",ph:"Acidity. Swings often follow algae growth or spills.",turb:"Cloudiness from soil, silt or runoff.",cond:"Dissolved salts. Rises with road salt and wastewater."};
 var HARD={flow:[0,5],ecoli:[0,100000],cyano:[0,5000000],do:[0,20],temp:[-1,40],ph:[0,14],turb:[0,3000],cond:[0,5000]};
-var T={still:{do:[6,3],temp:[24,30],cyano:[10000,100000],ecoli:[126,1000],turb:[10,60],cond:[500,1500]},flow:{do:[8,5],temp:[18,26],cyano:[20000,200000],ecoli:[126,1000],turb:[15,100],cond:[500,1500]}};
+var T={still:{do:[6,3],temp:[24,30],cyano:[10000,100000],ecoli:[126,1000],turb:[10,60],cond:[500,1500]},flow:{do:[8,5],temp:[24,32],cyano:[20000,200000],ecoli:[126,1000],turb:[15,100],cond:[500,1500]}};
 var SEED=[
 {name:"Potomac River near Washington, DC (Little Falls pump station)",short:"Little Falls, DC",note:"USGS station 01646500, river mile 117.4. Real sensor readings.",real:true,order:1646500,prov:"Source: USGS Water Data API, retrieved 1 Oct 2026, provisional. This sensor reports oxygen, temperature, pH and conductivity only, so bacteria, blooms, turbidity and flow speed show as not measured.",lat:38.949778,lon:-77.127639,ts:Date.UTC(2026,9,1,7,17),src:"usgs",fs:{do:"usgs",temp:"usgs",ph:"usgs",cond:"usgs"},r:{flow:null,ecoli:null,cyano:null,do:9.4,temp:20.9,ph:8.4,turb:null,cond:418}},
 {name:"Potomac River at Point of Rocks, MD",short:"Point of Rocks, MD",note:"USGS station 01638500, river mile 159.5, upstream of Little Falls.",real:true,order:1638500,prov:"Awaiting its first reading. USGS lists continuous water quality here since May 2021; the position shown is approximate until you load its readings with the script.",lat:39.2754,lon:-77.5414,ts:0,src:"awaiting",fs:{},r:{flow:null,ecoli:null,cyano:null,do:null,temp:null,ph:null,turb:null,cond:null}}];
@@ -255,21 +244,19 @@ function chain(r){r=N(r);var k=kindOf(r),c=[],end=null;
 if(k==="still"){if(r.temp>=24)c.push("Warm surface water ("+r.temp+" °C)");if(r.do<6)c.push("Low oxygen ("+r.do+" mg/L)");if(r.cyano>=10000)c.push("Bloom building ("+r.cyano.toLocaleString()+" cells/mL)");if(r.ph>9)c.push("Algae pushing pH to "+r.ph);if(r.cond>=800)c.push("Salts accumulating");
 if(r.cyano>=20000)end="Pets and children at risk";else if(r.do<4)end="Fish and insects at risk";
 if(c.length)c.push("Water stays for months, so it lingers")}
-else{if(r.turb>=50)c.push("Runoff pulse ("+r.turb+" NTU)");if(r.ecoli>=126)c.push("Bacteria carried in ("+r.ecoli+" CFU)");if(r.cond>=800)c.push("Salt or wastewater signal");if(r.do<6)c.push("Oxygen below flowing-water norm");if(r.temp>=22)c.push("Stream too warm for sensitive fish");
-if(c.length)c.push("Reaches the next site in about "+Math.max(1,Math.round(1000/Math.max(r.flow||.3,.05)/3600))+" h per km");if(r.ecoli>=410)end="People wading downstream at risk";else if(r.do<5)end="Sensitive insects and fish at risk"}
+else{if(r.turb>=50)c.push("Runoff pulse ("+r.turb+" NTU)");if(r.ecoli>=126)c.push("Bacteria carried in ("+r.ecoli+" CFU)");if(r.cond>=800)c.push("Salt or wastewater signal");if(r.do<6)c.push("Oxygen below flowing-water norm");if(r.temp>=28)c.push("Water is very warm ("+r.temp+" °C), stressful for many fish");
+if(c.length)c.push(isNaN(r.flow)?"Flow speed unknown, so travel time to the next site cannot be estimated":"Reaches the next site in about "+Math.max(1,Math.round(1000/Math.max(r.flow,.05)/3600))+" h per km");if(r.ecoli>=410)end="People wading downstream at risk";else if(r.do<5)end="Sensitive insects and fish at risk"}
 if(end)c.push(end);return{c:c,end:!!end}}
 function actions(r){r=N(r);var a=[],k=kindOf(r);
 if(r.cyano>=100000)a.push("Keep dogs and children out and post a bloom warning. Report to your health department.");else if(r.cyano>=(k==="still"?10000:20000))a.push("Bloom is building. Recheck within 3 days and rinse pets after any contact.");
 if(r.ecoli>=410)a.push(k==="flow"?"Bacteria are high. Sample upstream to trace the source, and warn sites downstream.":"Bacteria are high in water that does not flush. Advise no contact until retested.");else if(r.ecoli>=126)a.push("Bacteria are elevated. Avoid contact for 48 hours after rain and retest.");
-if(k==="still"&&r.do<4)a.push("Oxygen is very low. Test near the bottom too, as still water layers and the deep water is often worse.");else if(r.do<(k==="still"?6:8))a.push(k==="still"?"Oxygen is lowest before dawn. Recheck early in the morning.":"Oxygen is low for moving water. Look for a nutrient source or a blocked, slowed reach.");
+if(k==="still"&&r.do<4)a.push("Oxygen is very low. Test near the bottom too, as still water layers and the deep water is often worse.");else if(r.do<(k==="still"?6:8))a.push(k==="still"?"Oxygen is lowest before dawn. Recheck early in the morning.":"Oxygen is low for moving water. It also dips overnight, so compare with a daytime reading first. If it stays low, look for a nutrient source or a blocked, slowed reach.");
 if(r.cond>=800)a.push("Conductivity points to road salt or wastewater. Map nearby drains.");
 if(r.turb>=50)a.push("Muddy water suggests erosion or construction runoff. Inspect banks.");
-if(r.temp>=(k==="still"?26:22))a.push("Water is warm. Shade the banks with native trees.");
+if(r.temp>=(k==="still"?26:28))a.push("Water is warm. Shade the banks with native trees.");
 if(r.ph>9||r.ph<6.5)a.push("pH is outside 6.5 to 9. Retest, then look for a bloom or spill.");
 if(isNaN(r.ecoli))a.push("No bacteria reading yet. Add a quick bacteria band or a lab result before calling this site safe for contact.");if(isNaN(r.cyano)&&k==="still")a.push("No bloom check yet. Look for green scum and log what you see.");
 if(!a.length)a.push("No action needed. Keep the regular sampling schedule.");return a}
-function summary(){var S=RS(),n=S.length,sc=S.map(function(s){return score(s.r).all}),bad=sc.filter(function(x){return x!=null&&x<40}).length,un=sc.filter(function(x){return x==null}).length,i=-1,m=101;sc.forEach(function(x,j){if(x!=null&&x<m){m=x;i=j}});var w=S[i],st=S.filter(function(s){return kindOf(s.r)==="still"}).length;
-return bad+" of "+n+" sites need action now."+(w?" Lowest score: "+w.name+" ("+m+"/100), "+(kindOf(w.r)==="still"?"still water where a problem will linger, so act before it spreads.":"flowing water where a problem moves downstream, so warn the next site."):"")+(un?" "+un+" site(s) lack enough readings to score.":"")+" The watershed has "+st+" still-water and "+(n-st)+" flowing-water sites, each judged by its own rules."}
 function load(){try{var s=localStorage.getItem(KEY);if(s)return JSON.parse(s)}catch(e){}return null}
 function persist(){try{localStorage.setItem(KEY,JSON.stringify(sites))}catch(e){}}
 function build(){return SEED.map(function(x){var o=Object.assign({},x);o.r=Object.assign({},x.r);o.fs=Object.assign({},x.fs);var sa=score(o.r).all;o.h=sa==null?[]:[sa];return o})}
@@ -278,8 +265,10 @@ var NS="http://www.w3.org/2000/svg";
 function el(t,a,p){var e=document.createElementNS(NS,t);for(var k in a)e.setAttribute(k,a[k]);if(p)p.appendChild(e);return e}
 var MC={g:"#3ddc97",w:"#ffc857",b:"#ff6b5a",u:"#8fb3bb"};
 function mc(n){return n==null?MC.u:n>=70?MC.g:n>=40?MC.w:MC.b}
+function hav(a,b){var t=Math.PI/180,dl=(b.lat-a.lat)*t,dn=(b.lon-a.lon)*t,x=Math.sin(dl/2)*Math.sin(dl/2)+Math.cos(a.lat*t)*Math.cos(b.lat*t)*Math.sin(dn/2)*Math.sin(dn/2);return 12742*Math.asin(Math.sqrt(x))}
 function drawMap(){var m=$("map");m.innerHTML="";
-var pl=sites.map(function(x,i){return{s:x,i:i}}).filter(function(o){return hasPos(o.s)}).sort(function(a,b){return(a.s.order||1e9)-(b.s.order||1e9)}),
+var ss=$("stsel");if(ss)ss.innerHTML=sites.map(function(s,i){return'<option value="'+i+'"'+(i===sel?" selected":"")+">"+esc(s.short||s.name)+"</option>"}).join("");
+var pl=sites.map(function(x,i){return{s:x,i:i}}).filter(function(o){return hasPos(o.s)&&(!hasPos(sites[sel])||hav(sites[sel],o.s)<=500)}).sort(function(a,b){return(a.s.order||1e9)-(b.s.order||1e9)}),
 la=pl.map(function(o){return o.s.lat}),lo=pl.map(function(o){return o.s.lon});if(!pl.length){la=[0,.01];lo=[0,.01]}
 var a0=Math.min.apply(null,la),a1=Math.max.apply(null,la),o0=Math.min.apply(null,lo),o1=Math.max.apply(null,lo),k=Math.cos((a0+a1)/2*Math.PI/180),W=210,H=380,
 sc=Math.min(W/(((o1-o0)*k)||1e-6),H/((a1-a0)||1e-6));if(!isFinite(sc)||((a1-a0)<.002&&(o1-o0)*k<.002))sc=40000;
@@ -296,7 +285,7 @@ var na=el("text",{x:332,y:16,"text-anchor":"end"},m);na.textContent="N ↑";
 var mpp=111320/sc,raw=mpp*70,p10=Math.pow(10,Math.floor(Math.log(raw)/Math.LN10)),nice=[1,2,5,10].map(function(f){return f*p10}).filter(function(v){return v<=raw}).pop()||p10,bw=nice/mpp;
 el("line",{x1:332-bw,x2:332,y1:504,y2:504,stroke:"#e9f8fa","stroke-width":2},m);var sb=el("text",{x:332,y:494,"text-anchor":"end",style:"font-weight:400;font-size:11px"},m);sb.textContent=nice>=1000?nice/1000+" km":nice+" m";
 var un=0;
-sites.forEach(function(s,i){var p=pos[i]||[24,490-(un++)*28],x=p[0],y=p[1],kd=kindOf(s.r),v=score(s.r).all,col=mc(v),on=i===sel,left=x<170;
+sites.forEach(function(s,i){if(hasPos(s)&&!pos[i])return;var p=pos[i]||[24,490-(un++)*28],x=p[0],y=p[1],kd=kindOf(s.r),v=score(s.r).all,col=mc(v),on=i===sel,left=x<170;
 var gr=el("g",{"class":"site",tabindex:0,role:"button","aria-label":s.name+", "+(kd==="still"?"still water":"flowing water")+", "+stat(v)[0]+(on?", selected":"")},m);
 var pc=v!=null&&v<40?" fast":"";
 if(v!=null){el(kd==="still"?"ellipse":"circle",kd==="still"?{"class":"pulse"+pc,cx:x,cy:y,rx:16,ry:11,fill:"none",stroke:col,"stroke-width":2}:{"class":"pulse"+pc,cx:x,cy:y,r:11,fill:"none",stroke:col,"stroke-width":2},gr);
@@ -310,7 +299,7 @@ gr.onclick=function(){pick(i)};gr.onkeydown=function(e){if(e.key==="Enter"||e.ke
 function drawDetail(){var s=sites[sel],k=kindOf(s.r),sc=score(s.r),ss=sub(s.r,k),st=stat(sc.all);
 $("sname").textContent=s.name;$("snote").textContent=s.note;$("prov").textContent=s.prov||"";
 var kd=$("kind");kd.textContent=k==="still"?"Still water":"Flowing water · "+(s.r.flow==null?"speed not given":s.r.flow+" m/s");kd.style.background=k==="still"?"var(--still)":"var(--flow)";
-var b=$("badge");var nr0=COLS.every(function(k){return s.r[k]==null});b.textContent=sc.all==null?(nr0?"Awaiting first reading":"Needs a bacteria check"):st[0]+" · "+sc.all+"/100"+(s.r.ecoli==null?" · bacteria unchecked":"");if(sc.all==null&&!nr0)b.style.background="var(--watch)";b.style.background=st[1];var fsv=Object.keys(s.fs||{}).map(function(k){return s.fs[k]}).filter(function(v,i,a){return a.indexOf(v)===i}).map(function(v){return FS[v]});$("src").textContent=(fsv.length?fsv.join(" + "):SRC[s.src||"sample"])+(s.ts?" · "+new Date(s.ts).toLocaleDateString():"");
+var b=$("badge");var nr0=COLS.every(function(k){return s.r[k]==null});b.textContent=sc.all==null?(nr0?"Awaiting first reading":"Needs a bacteria check"):(sc.people==null&&st[0]==="Good"?"Good so far":st[0])+" · "+sc.all+"/100"+(s.r.ecoli==null?" · bacteria unchecked":"");if(sc.all==null&&!nr0)b.style.background="var(--watch)";b.style.background=st[1];var fsv=Object.keys(s.fs||{}).map(function(k){return s.fs[k]}).filter(function(v,i,a){return a.indexOf(v)===i}).map(function(v){return FS[v]});$("src").textContent=(fsv.length?fsv.join(" + "):SRC[s.src||"sample"])+(s.ts?" · "+new Date(s.ts).toLocaleString()+(Date.now()-s.ts>3*36e5?" ("+Math.round((Date.now()-s.ts)/36e5)+" h old)":""):"");
 var a=score(s.r,"still").all,f=score(s.r,"flow").all;
 $("ver").innerHTML=[["As still water",a,"still"],["As flowing water",f,"flow"]].map(function(v){return '<div class="'+(k===v[2]?"on":"")+'" style="border-color:'+(k===v[2]?stat(v[1])[1]:"var(--line)")+'"><strong>'+v[0]+':</strong> '+(v[1]==null?"n/a":v[1]+"/100")+(k===v[2]?" (applies)":"")+'</div>'}).join("");
 var lenses=[["People","Swimming, wading, contact",sc.people],["Pets and wildlife","Drinking, fish, birds",sc.animals],["The stream","Oxygen, chemistry, habitat",sc.stream]];
@@ -321,7 +310,7 @@ $("tbl").innerHTML='<tr><th>Measure</th><th>Value</th><th>Status</th></tr>'+PARA
 var sp=$("spark");sp.innerHTML="";var h=s.h.slice(-14),n=h.length,pts=h.map(function(v,i){return[8+i*(284/(n-1||1)),54-v*.5]});
 el("polyline",{points:pts.map(function(q){return q.join(",")}).join(" "),fill:"none",stroke:"var(--acc)","stroke-width":2.5,"stroke-linejoin":"round"},sp);
 var q=pts[pts.length-1];if(q)el("circle",{cx:q[0],cy:q[1],r:5,fill:st[1]},sp);
-buildForms();showExport();drawRules();drawNext(s);drawGauge(sc.all,st[1]);$("sum").textContent=summary()}
+buildForms();showExport();drawRules();drawNext(s);drawGauge(sc.all,st[1]);}
 function buildForms(){$("fe").innerHTML=PARAMS.map(function(p){return '<label>'+p[1]+(p[2]?' ('+p[2]+')':'')+'<input type="number" id="in_'+p[0]+'" step="'+p[3]+'" min="0" value="'+(sites[sel].r[p[0]]==null?"":sites[sel].r[p[0]])+'"></label>'}).join("");
 $("fq").innerHTML=PARAMS.map(function(p){return '<fieldset><legend>'+p[1]+'</legend>'+BANDS[p[0]].map(function(b){return '<label class="opt"><input type="radio" name="q_'+p[0]+'" value="'+b[1]+'">'+b[0]+'</label>'}).join("")+'</fieldset>'}).join("")}
 function setMode(x){mode=x;$("fq").hidden=x!=="quick";$("fe").hidden=x!=="exact";$("mq").className=x==="quick"?"sel":"ghost";$("me").className=x==="exact"?"sel":"ghost"}
@@ -344,7 +333,7 @@ function drawGauge(v,c){var g=$("gauge");g.innerHTML='<circle cx="50" cy="50" r=
 var r=$("gr"),go=function(){r.style.strokeDashoffset=String(264*(1-(v==null?0:v/100)))};if(window.requestAnimationFrame)requestAnimationFrame(go);else go();if(v!=null)countTo($("gv"),v)}
 function adv(s){var r=s.r,bd=s.fs&&s.fs.ecoli==="band",hi=r.ecoli>=410;return "Water advisory: "+s.name+". Bacteria reported "+(bd?(hi?"high (over 410 CFU/100 mL, citizen estimate)":"elevated (126 to 410 CFU/100 mL, citizen estimate)"):r.ecoli+" CFU/100 mL"+(hi?" (high)":" (elevated)"))+". Avoid swimming, wading and letting pets drink until retested. Shared "+new Date().toLocaleDateString()+" via Watershed Ledger."}
 function drawNext(s){var r=N(s.r),h,nr=COLS.every(function(k){return s.r[k]==null});
-if(nr)h=["unk","Awaiting first reading","This station has no readings yet. Load them with the companion script, or log what you can see.","Load readings","load"];
+if(nr)h=["unk","Awaiting first reading","This station has no readings yet. Press Refresh from USGS in the Live USGS data box above, or log what you can see.","Go to live data","load"];
 else if(isNaN(r.ecoli))h=["unk","Bacteria unchecked","Sensors cannot see bacteria, so safety for people and pets is unknown. Until someone checks, keep your head out of the water and stop pets from drinking.","Check bacteria now","bact"];
 else if(r.ecoli>=410)h=["bad","Bacteria high","Above the high-risk line. Warn people now, then sample upstream to find the source.","Copy warning","adv"];
 else if(r.ecoli>=126)h=["warn","Bacteria elevated","Above the guideline. Avoid contact for 48 hours after rain and retest.","Copy advisory","adv"];
@@ -358,12 +347,6 @@ return "<tr><td>"+m[1]+"</td><td>"+(s.r[m[0]]==null?"—":s.r[m[0]])+"</td><td>"
 $("rsplit").innerHTML="<tr><th>Measure</th><th>Value</th><th>As still water</th><th>As flowing water</th><th></th></tr>"+rows;
 $("rsum").textContent=df.length?"At "+s.name+", a single rulebook would miss something: "+df.join("; ")+".":"At "+s.name+" the two rulebooks agree on every measure. The split matters most for oxygen, temperature and algae.";
 $("rcase").innerHTML="<tr><th>Published value</th><th>Toxin (µg/L)</th><th>Rule: above 1 µg/L</th><th>Source</th></tr>"+CASES.map(function(c){var f=c[1]>1;return "<tr><td>"+c[0]+"</td><td>"+c[1]+"</td><td class='"+(f?"flag":"")+"'>"+(f?"Flagged":"Below guideline")+"</td><td>"+c[2]+"</td></tr>"}).join("")}
-var PK="watershed-pilot-v1",pilot=[];
-function lp(){try{var v=localStorage.getItem(PK);if(v)pilot=JSON.parse(v)}catch(e){}}
-function sp(){try{localStorage.setItem(PK,JSON.stringify(pilot))}catch(e){}}
-function drawPilot(){var n=pilot.length,o=$("pout");if(!n){o.value="No sessions yet. Nothing here counts as evidence until real volunteers have tried it.";return}
-var t=[0,0,0],c=0,cn=0;pilot.forEach(function(p){p.t.forEach(function(x,i){if(x)t[i]++});if(p.c){c+=p.c;cn++}});
-o.value="Sessions: "+n+"\nTask 1 (find the site needing attention) done unaided: "+t[0]+"/"+n+"\nTask 2 (log a quick reading) done unaided: "+t[1]+"/"+n+"\nTask 3 (explain Not measured) done unaided: "+t[2]+"/"+n+"\nAverage confidence: "+(cn?(c/cn).toFixed(1)+"/5":"n/a")+"\nWhat confused people:\n"+pilot.map(function(p){return "- "+(p.n||"?")+": "+(p.q||"nothing noted")}).join("\n")}
 function pick(i){sel=i;$("toast").textContent="";drawMap();drawDetail()}
 function say(m,ok,id){var t=$(id||"toast");t.style.color=ok?"var(--good)":"var(--bad)";t.textContent=m}
 $("mq").onclick=function(){setMode("quick")};$("me").onclick=function(){setMode("exact")};
@@ -385,8 +368,8 @@ var d=[",","\t",";"].filter(function(x){return L[0].indexOf(x)>=0}).sort(functio
 var hd=splitRow(L[0].toLowerCase(),d);
 if(hd.indexOf("name")<0||!hd.some(function(h){return COLS.indexOf(h)>=0})){say("Header row not recognised. It needs name plus at least one of: "+COLS.join(", ")+".",false,"t2");return}
 var done=0,err="",used={},n0=sites.length;
-L.slice(1).forEach(function(line){var c=splitRow(line,d),o={};hd.forEach(function(h,i){o[h]=c[i]||""});if(!o.name)return;
-var od=parseFloat(o.order),s=sites.filter(function(x){return(isFinite(od)&&x.order===od)||x.name.toLowerCase()===o.name.toLowerCase()})[0];
+L.slice(1).forEach(function(line){var c=splitRow(line,d),o={};hd.forEach(function(h,i){o[h]=c[i]||""});if(!o.name)return;o.name=o.name.replace(/;\s*/g,", ");
+var od=parseFloat(o.order),s=sites.filter(function(x){return(isFinite(od)&&x.order===od)||x.name.toLowerCase()===o.name.toLowerCase()})[0];if(s&&!s.short)s.name=o.name;
 if(!s){if(sites.length>=12){err+="Limit of 12 sites. ";return}s={name:o.name,note:"Imported site.",r:{flow:null,ecoli:null,cyano:null,do:null,temp:null,ph:null,turb:null,cond:null},h:[],lat:NaN,lon:NaN};sites.push(s)}
 COLS.forEach(function(k){if(o[k]===undefined||o[k]==="")return;var v=parseFloat(o[k]),h=HARD[k];if(isNaN(v)||v<h[0]||v>h[1])err+=o.name+": "+k+" skipped (not a valid number in range). ";else{s.r[k]=v;used[k]=1;(s.fs=s.fs||{})[k]=o.source==="usgs"?"usgs":"file"}});
 if(isFinite(od))s.order=od;var la=parseFloat(o.lat),lo=parseFloat(o.lon);if(isFinite(la)&&isFinite(lo)){s.lat=la;s.lon=lo}
@@ -394,13 +377,9 @@ s.src=o.source==="usgs"?"usgs":"csv";var ob=Date.parse(o.observed);s.ts=isFinite
 persist();if(sites.length>n0)sel=sites.length-1;drawMap();drawDetail();var u=Object.keys(used);say(done+" site(s) updated"+(u.length?" ("+u.join(", ")+")":", but no readings were applied")+". "+err,!err&&u.length>0,"t2")}
 $("imp").onclick=function(){importText($("it").value)};
 sites=load();if(!sites||sites.length<1||!isFinite(sites[0].ts))sites=build();
-$("padd").onclick=function(){var cv=parseInt($("pc").value,10),t=$("pt");if(!$("pn").value.trim()){t.style.color="var(--bad)";t.textContent="Add the volunteer's initials.";return}
-pilot.push({n:$("pn").value.trim(),t:[0,1,2].map(function(i){return $("pt"+i).checked}),c:cv>=1&&cv<=5?cv:0,q:$("pq").value.trim()});sp();
-["pn","pq","pc"].forEach(function(i){$(i).value=""});[0,1,2].forEach(function(i){$("pt"+i).checked=false});t.style.color="var(--good)";t.textContent="Session added.";drawPilot()};
-$("pclr").onclick=function(){pilot=[];sp();$("pt").textContent="";drawPilot()};
 $("next").onclick=function(e){var b=e.target.closest("button");if(!b)return;var a=b.getAttribute("data-act"),f;
 if(a==="bact"){setMode("quick");f=document.querySelector('input[name="q_ecoli"]');if(f){f.focus();if(f.scrollIntoView)f.scrollIntoView({behavior:"smooth",block:"center"})}}
-else if(a==="load"){f=$("it");f.focus();if(f.scrollIntoView)f.scrollIntoView({behavior:"smooth",block:"center"})}
+else if(a==="load"){f=$("lvb");f.focus();if(f.scrollIntoView)f.scrollIntoView({behavior:"smooth",block:"center"})}
 else if(a==="adv"){var ta=$("adv");ta.select();try{navigator.clipboard.writeText(ta.value).then(function(){b.textContent="Copied"},function(){})}catch(x){}}};
 $("aadd").onclick=function(){var n=$("an").value.trim(),la=parseFloat($("aa").value),lo=parseFloat($("ao").value),t=$("t4");
 if(!n||!(la>=-90&&la<=90)||!(lo>=-180&&lo<=180)){say("Add a name, a latitude (-90 to 90) and a longitude (-180 to 180).",false,"t4");return}
@@ -413,13 +392,20 @@ var b=$("bub");for(var i=0;i<16;i++){var e=document.createElement("i"),z=4+Math.
 var ps=document.querySelectorAll(".panel");if(window.IntersectionObserver){var io=new IntersectionObserver(function(en){en.forEach(function(x){if(x.isIntersecting){x.target.classList.add("in");io.unobserve(x.target)}})},{threshold:.08});ps.forEach(function(p){io.observe(p)})}else ps.forEach(function(p){p.classList.add("in")})})();
 var SERVER=false,lvt=null;
 function lvMsg(m,ok){var e=$("lvs");e.textContent=m;e.style.color=ok===false?"var(--bad)":"var(--mute)"}
-function loadHistory(){return fetch("data/history.json",{cache:"no-store"}).then(function(r){return r.ok?r.json():[]}).then(function(h){var ch=false;sites.forEach(function(s){var rec=h.filter(function(x){return parseFloat(x.order)===s.order}).slice(-30),sc=rec.map(function(x){return score(x.r).all}).filter(function(v){return v!=null});if(sc.length){s.h=sc;ch=true}});if(ch){persist();drawDetail()}}).catch(function(){})}
+function loadHistory(p){return fetch(p||"data/history.json",{cache:"no-store"}).then(function(r){return r.ok?r.json():[]}).then(function(h){var ch=false;sites.forEach(function(s){var rec=h.filter(function(x){return parseFloat(x.order)===s.order}).slice(-30),sc=rec.map(function(x){return score(x.r).all}).filter(function(v){return v!=null});if(sc.length){s.h=sc;ch=true}});if(ch){persist();drawDetail()}}).catch(function(){})}
 function refreshLive(){if(!SERVER)return;var ids=$("lvi").value.split(/[ ,;]+/).filter(Boolean);lvMsg("Contacting USGS…");$("lvb").disabled=true;
 fetch("/api/refresh",{method:"POST",headers:{"X-Ledger":"1","Content-Type":"application/json"},body:JSON.stringify({sites:ids})}).then(function(r){return r.json().then(function(j){if(!r.ok)throw new Error(j.error||("HTTP "+r.status));return j})}).then(function(j){importText(j.csv);lvMsg("Updated "+new Date(j.fetched).toLocaleTimeString()+" · "+j.count+" station(s)"+(j.warnings&&j.warnings.length?" · "+j.warnings.join("; "):""),!(j.warnings&&j.warnings.length));return loadHistory()}).catch(function(e){lvMsg("Refresh failed: "+e.message,false)}).then(function(){$("lvb").disabled=false})}
 $("lvb").onclick=refreshLive;
+$("stsel").onchange=function(){pick(parseInt(this.value,10))};
+$("fnd").onclick=function(){var bb=$("fbb").value.split(/[ ,;]+/).filter(Boolean).map(parseFloat);if(bb.length!==4||bb.some(isNaN)){lvMsg("The search area needs four numbers: west, south, east, north.",false);return}
+lvMsg("Searching USGS for active stations with oxygen and pH…");$("fnd").disabled=true;
+fetch("/api/find",{method:"POST",headers:{"X-Ledger":"1","Content-Type":"application/json"},body:JSON.stringify({bbox:bb})}).then(function(r){return r.json().then(function(j){if(!r.ok)throw new Error(j.error||("HTTP "+r.status));return j})}).then(function(j){var f=$("fres");f.innerHTML="";lvMsg(j.stations.length?"Found "+j.stations.length+" active station(s) reporting oxygen and pH. Add the ones you want, then press Refresh.":"No active stations with both oxygen and pH in that area. Try a bigger area.");
+j.stations.forEach(function(s){var b=document.createElement("button");b.type="button";b.className="ghost";b.style.margin="6px 6px 0 0";b.textContent="+ "+s.name+" ("+s.id+")";b.onclick=function(){var v=$("lvi").value.split(/[ ,;]+/).filter(Boolean);if(v.indexOf(s.id)<0)v.push(s.id);$("lvi").value=v.join(", ");b.disabled=true;b.textContent="Added: "+s.name};f.appendChild(b)})}).catch(function(e){lvMsg("Search failed: "+e.message,false)}).then(function(){$("fnd").disabled=!SERVER})};
 $("lva").onchange=function(){clearInterval(lvt);if(this.checked)lvt=setInterval(refreshLive,900000)};
-lp();drawMap();drawDetail();drawPilot();
-fetch("/api/ping",{cache:"no-store"}).then(function(r){if(!r.ok)throw 0;SERVER=true;$("lvb").disabled=false;lvMsg("Connected to the local server. Press Refresh to pull the latest USGS readings.");return fetch("data/readings.csv",{cache:"no-store"})}).then(function(r){return r&&r.ok?r.text():""}).then(function(t){if(t){importText(t);lvMsg("Loaded the last saved readings. Press Refresh for the latest.")}return loadHistory()}).catch(function(){if(!SERVER)lvMsg("Live refresh needs the local server (run python3 server.py). Until then, paste CSV into Import below.",false)});
+drawMap();drawDetail();
+fetch("/api/ping",{cache:"no-store"}).then(function(r){if(!r.ok)throw 0;SERVER=true;$("lvb").disabled=false;$("fnd").disabled=false;lvMsg("Connected to the local server. Press Refresh to pull the latest USGS readings.");return fetch("data/readings.csv",{cache:"no-store"})}).then(function(r){return r&&r.ok?r.text():""}).then(function(t){if(t){importText(t);lvMsg("Loaded the last saved readings. Press Refresh for the latest.")}return loadHistory()}).catch(function(){if(SERVER)return;
+return fetch("live/readings.csv",{cache:"no-store"}).then(function(r){if(!r.ok)throw 0;return r.text()}).then(function(t){importText(t);
+return fetch("live/updated.txt",{cache:"no-store"}).then(function(r){return r.ok?r.text():""}).catch(function(){return ""}).then(function(u){lvMsg("Showing the latest scheduled update from USGS"+(u?" ("+new Date(u.trim()).toLocaleString()+")":"")+". It refreshes about every 30 minutes on its own.")})}).then(function(){return loadHistory("live/history.json")}).catch(function(){lvMsg("No live data file yet, so the page shows its starting stations. Paste CSV into Import to add readings.",false)})});
 </script>
 </body>
 </html>

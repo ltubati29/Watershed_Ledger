@@ -30,8 +30,8 @@ def num(v):
         return None
 
 
-def save_history(rows, fetched):
-    path = DATA / "history.json"
+def save_history(rows, fetched, folder=DATA):
+    path = folder / "history.json"
     try:
         hist = json.loads(path.read_text())
     except Exception:
@@ -75,14 +75,27 @@ class Handler(SimpleHTTPRequestHandler):
             return super().do_GET()
         self.send_error(404)
 
+    def find(self, body):
+        try:
+            box = [float(x) for x in body.get("bbox", [])]
+            assert len(box) == 4 and -180 <= box[0] < box[2] <= 180 and -90 <= box[1] < box[3] <= 90
+        except (TypeError, ValueError, AssertionError):
+            return self.reply(400, {"error": "Search area must be west, south, east, north."})
+        try:
+            self.reply(200, {"stations": usgs.find(tuple(box))})
+        except Exception as e:
+            self.reply(502, {"error": str(e)})
+
     def do_POST(self):
-        if self.path != "/api/refresh" or self.headers.get("X-Ledger") != "1" or not self.local_only():
+        if self.path not in ("/api/refresh", "/api/find") or self.headers.get("X-Ledger") != "1" or not self.local_only():
             return self.send_error(403)
         length = int(self.headers.get("Content-Length") or 0)
         try:
             body = json.loads(self.rfile.read(length) or b"{}")
         except ValueError:
             return self.reply(400, {"error": "Bad request."})
+        if self.path == "/api/find":
+            return self.find(body)
         sites = [str(s) for s in body.get("sites", []) if re.fullmatch(r"(USGS-)?\d{8,15}", str(s))][:12]
         sites = sites or usgs.DEFAULT_SITES
         if not LOCK.acquire(blocking=False):

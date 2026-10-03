@@ -2,6 +2,7 @@
 """Fetch the latest USGS sensor readings for Watershed Ledger.
 
 Command line:  python3 fetch_usgs_to_ledger.py [station numbers] > readings.csv
+               python3 fetch_usgs_to_ledger.py --find [west,south,east,north]   (default: Texas)
 Used by:       server.py (the Refresh button calls collect()).
 
 Uses the USGS Water Data OGC API (https://api.waterdata.usgs.gov/ogcapi/v1):
@@ -20,7 +21,8 @@ import urllib.parse
 import urllib.request
 
 BASE = "https://api.waterdata.usgs.gov/ogcapi/v1"
-PCODES = {"00010": "temp", "00095": "cond", "00300": "do", "00400": "ph"}
+PCODES = {"00010": "temp", "00095": "cond", "00300": "do", "00400": "ph", "00060": "discharge"}
+TEXAS_BBOX = (-106.65, 25.84, -93.51, 36.50)  # west, south, east, north
 COLS = ["flow", "ecoli", "cyano", "do", "temp", "ph", "turb", "cond"]
 HEADER = ["name", "lat", "lon"] + COLS + ["source", "order", "observed"]
 DEFAULT_SITES = ["01638500", "01646500"]  # Potomac at Point of Rocks, MD; near Washington, DC
@@ -42,13 +44,15 @@ def location(site):
 
 
 def latest(site, pcode):
-    d = get("/collections/continuous/items", f="json", monitoring_location_id=site,
-            parameter_code=pcode, time="PT6H", limit=200)
-    feats = d.get("features", [])
-    if not feats:
-        return "", ""
-    best = max(feats, key=lambda f: f["properties"]["time"])["properties"]
-    return best["value"], best["time"]
+    """Newest value of one sensor: the last 6 hours first, then the last 3 days."""
+    for window, limit in (("PT6H", 200), ("P3D", 1000)):
+        d = get("/collections/continuous/items", f="json", monitoring_location_id=site,
+                parameter_code=pcode, time=window, limit=limit)
+        feats = d.get("features", [])
+        if feats:
+            best = max(feats, key=lambda f: f["properties"]["time"])["properties"]
+            return best["value"], best["time"]
+    return "", ""
 
 
 def collect(sites):
@@ -72,8 +76,31 @@ def collect(sites):
             row[key] = value
             if when and when > row["observed"]:
                 row["observed"] = when
+        try:  # no discharge at all means a pool, not a stream: judge it as still water
+            if str(row.get("discharge", "")) != "" and float(row["discharge"]) <= 0.05:
+                row["flow"] = "0"
+        except ValueError:
+            pass
         rows.append(row)
     return rows, warnings
+
+
+def find(bbox, want=("00300", "00400"), max_sites=20):
+    """Active stations inside bbox that report every parameter in `want`
+    (default: dissolved oxygen and pH). Uses the time-series-metadata collection."""
+    found = []
+    for pcode in want:
+        d = get("/collections/time-series-metadata/items", f="json", parameter_code=pcode,
+                bbox=",".join(str(x) for x in bbox), end="P3D", limit=1000)
+        found.append({f["properties"]["monitoring_location_id"] for f in d.get("features", [])})
+    out = []
+    for site in sorted(set.intersection(*found))[:max_sites]:
+        try:
+            name, lat, lon = location(site)
+        except Exception:
+            name, lat, lon = site, "", ""
+        out.append({"id": site.split("-")[-1], "name": name, "lat": lat, "lon": lon})
+    return out
 
 
 def to_csv(rows):
@@ -84,6 +111,11 @@ def to_csv(rows):
 
 
 if __name__ == "__main__":
+    if sys.argv[1:2] == ["--find"]:
+        box = tuple(float(x) for x in sys.argv[2].split(",")) if len(sys.argv) > 2 else TEXAS_BBOX
+        for s in find(box):
+            print(f'{s["id"]}  {s["name"]}')
+        sys.exit(0)
     out, warns = collect(sys.argv[1:] or DEFAULT_SITES)
     print(to_csv(out), end="")
     for w in warns:

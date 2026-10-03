@@ -1,0 +1,8 @@
+# One USGS station number per line. Edit this file on GitHub to change what the public page shows.
+# Pick stations that report dissolved oxygen and pH (use "Find stations" in the dashboard).
+01638500   # Potomac River at Point of Rocks, MD
+01646500   # Potomac River near Washington, DC (Little Falls)
+07332605   # Bois D'Arc Ck at HWY 56 nr Bonham, TX
+07332622   # Bois D'Arc Ck at FM 409 nr Honey Grove, TX
+08052700   # Little Elm Ck nr Aubrey, TX
+08057000   # Trinity Rv at Dallas, TX
